@@ -5,12 +5,13 @@ package main
 import (
 	"sync"
 
+	"spire/lobby/internal/core"
 	"spire/lobby/internal/router"
 )
 
 func main() {
-	//settings := core.ReadSettings("settings.yaml")
-	r := router.NewRouter()
+	ctx := core.NewContext()
+	r := router.NewRouter(ctx)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -24,4 +25,6 @@ func main() {
 	}()
 
 	wg.Wait()
+
+	ctx.Db.Close()
 }
