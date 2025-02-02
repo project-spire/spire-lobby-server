@@ -74,6 +74,12 @@ func newSettings(settingsPath string) *Settings {
 	}
 	s.DbPassword = strings.TrimSpace(string(data))
 
+	data, err = os.ReadFile(os.Getenv("SPIRE_AUTH_KEY_FILE"))
+	if err != nil {
+		panic(err)
+	}
+	s.AuthKey = strings.TrimSpace(string(data))
+
 	if !s.validate() {
 		panic("Invalid settings")
 	}
@@ -83,6 +89,9 @@ func newSettings(settingsPath string) *Settings {
 
 func (s *Settings) validate() bool {
 	if (s.DbHost == "") || (s.DbName == "") || (s.DbUser == "") || (s.DbPassword == "") {
+		return false
+	}
+	if s.AuthKey == "" {
 		return false
 	}
 
