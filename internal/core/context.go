@@ -57,16 +57,19 @@ func newSettings(settingsPath string) *Settings {
 	}
 
 	s.DbHost = os.Getenv("SPIRE_DB_HOST")
+
 	port, err := strconv.Atoi(os.Getenv("SPIRE_DB_PORT"))
 	if err != nil {
 		panic(err)
 	}
 	s.DbPort = port
+
 	s.DbName = os.Getenv("SPIRE_DB_NAME")
+
 	s.DbUser = os.Getenv("SPIRE_DB_USER")
 
 	data, err = os.ReadFile(os.Getenv("SPIRE_DB_PASSWORD_FILE"))
-	if err == nil {
+	if err != nil {
 		panic(err)
 	}
 	s.DbPassword = strings.TrimSpace(string(data))
