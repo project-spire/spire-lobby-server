@@ -96,16 +96,18 @@ func HandleRegisterBot(c *gin.Context, ctx *core.Context) {
 
 	// Register bot
 	tx, err := ctx.Db.Begin()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		log.Fatalf("Error beginning transaction: %v", err)
+		return
+	}
+
 	cleanup := func() {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		err := tx.Rollback()
 		if err != nil {
 			log.Fatalf("Error rolling back transaction: %v", err)
 		}
-	}
-	if err != nil {
-		cleanup()
-		return
 	}
 
 	row := tx.QueryRow("SELECT 1 FROM bots WHERE bot_id = ?", r.BotId)

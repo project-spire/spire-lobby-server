@@ -24,7 +24,11 @@ type Settings struct {
 	DbUser     string
 	DbPassword string
 
-	AuthKey string
+	ListenPort int
+
+	CertificateFile string
+	PrivateKeyFile  string
+	AuthKey         string
 }
 
 func NewContext() *Context {
@@ -74,11 +78,19 @@ func newSettings(settingsPath string) *Settings {
 	}
 	s.DbPassword = strings.TrimSpace(string(data))
 
+	s.ListenPort, err = strconv.Atoi(os.Getenv("SPIRE_LOBBY_PORT"))
+	if err != nil {
+		panic(err)
+	}
+
 	data, err = os.ReadFile(os.Getenv("SPIRE_AUTH_KEY_FILE"))
 	if err != nil {
 		panic(err)
 	}
 	s.AuthKey = strings.TrimSpace(string(data))
+
+	s.CertificateFile = os.Getenv("SPIRE_LOBBY_CERTIFICATE_FILE")
+	s.PrivateKeyFile = os.Getenv("SPIRE_LOBBY_PRIVATE_KEY_FILE")
 
 	if !s.validate() {
 		panic("Invalid settings")

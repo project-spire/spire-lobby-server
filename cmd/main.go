@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"spire/lobby/internal/core"
@@ -19,7 +20,9 @@ func main() {
 	go func() {
 		defer wg.Done()
 
-		if err := r.Run(":8080"); err != nil {
+		addr := fmt.Sprintf(":%d", ctx.Settings.ListenPort)
+
+		if err := r.RunTLS(addr, ctx.Settings.CertificateFile, ctx.Settings.PrivateKeyFile); err != nil {
 			panic(err)
 		}
 	}()

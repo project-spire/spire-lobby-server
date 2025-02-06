@@ -8,9 +8,9 @@ import (
 func NewRouter(ctx *core.Context) *gin.Engine {
 	r := gin.Default()
 
-	r.GET("/auth/bot", func(c *gin.Context) { HandleAuthBot(c, ctx) })
-	r.GET("/account/bot", func(c *gin.Context) { HandleAccountBot(c, ctx) })
-	r.GET("/register/bot", func(c *gin.Context) { HandleRegisterBot(c, ctx) })
+	r.POST("/auth/bot", func(c *gin.Context) { HandleAuthBot(c, ctx) })
+	r.POST("/account/bot", func(c *gin.Context) { HandleAccountBot(c, ctx) })
+	r.POST("/register/bot", func(c *gin.Context) { HandleRegisterBot(c, ctx) })
 
 	return r
 }
