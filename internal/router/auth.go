@@ -11,7 +11,8 @@ import (
 )
 
 type AuthRequest struct {
-	AccountId uint64 `json:"account_id" binding:"required"`
+	AccountId   uint64 `json:"account_id" binding:"required"`
+	CharacterId uint64 `json:"character_id" binding:"required"`
 }
 
 type AuthResponse struct {
@@ -37,7 +38,8 @@ func HandleBotAuth(c *gin.Context, ctx *core.Context) {
 	}
 
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"account_id": r.AccountId,
+		"account_id":   r.AccountId,
+		"character_id": r.CharacterId,
 	})
 	s, err := t.SignedString([]byte(ctx.Settings.AuthKey))
 	if err != nil {
