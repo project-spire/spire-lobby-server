@@ -24,6 +24,8 @@ type Settings struct {
 	DbUser     string
 	DbPassword string
 
+	MaxDbConnns int `yaml:"max_db_connections"`
+
 	ListenPort int
 
 	CertificateFile string
@@ -40,6 +42,8 @@ func NewContext() *Context {
 	if err != nil {
 		panic(err)
 	}
+
+	db.SetMaxOpenConns(s.MaxDbConnns)
 
 	return &Context{
 		Settings: s,
