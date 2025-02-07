@@ -27,7 +27,8 @@ func HandleAuthBot(c *gin.Context, ctx *core.Context) {
 	}
 
 	row := ctx.Db.QueryRow("SELECT 1 FROM accounts WHERE account_id = ?", r.AccountId)
-	if err := row.Scan(); err != nil {
+	var one int
+	if err := row.Scan(&one); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
 			return
@@ -39,7 +40,7 @@ func HandleAuthBot(c *gin.Context, ctx *core.Context) {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"account_id": r.AccountId,
 	})
-	s, err := t.SignedString(ctx.Settings.AuthKey)
+	s, err := t.SignedString([]byte(ctx.Settings.AuthKey))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token signing failed"})
 		return
@@ -69,7 +70,7 @@ func HandleAccountBot(c *gin.Context, ctx *core.Context) {
 	var accountId uint64
 	if err := row.Scan(&accountId); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusBadRequest, Response{AccountId: 0})
+			c.JSON(http.StatusOK, Response{AccountId: 0})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
