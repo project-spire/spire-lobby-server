@@ -19,13 +19,13 @@ type AuthResponse struct {
 	Token string `json:"token"`
 }
 
-func HandleBotAuth(c *gin.Context, ctx *core.Context) {
+func HandleBotAuth(c *gin.Context, x *core.Context) {
 	var r AuthRequest
 	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
-	row := ctx.Db.QueryRow("SELECT 1 FROM accounts WHERE account_id = ?", r.AccountId)
+	row := x.D.QueryRow("SELECT 1 FROM accounts WHERE account_id = ?", r.AccountId)
 	var one int
 	if err := row.Scan(&one); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -40,7 +40,7 @@ func HandleBotAuth(c *gin.Context, ctx *core.Context) {
 		"account_id":   r.AccountId,
 		"character_id": r.CharacterId,
 	})
-	s, err := t.SignedString([]byte(ctx.Settings.AuthKey))
+	s, err := t.SignedString([]byte(x.S.AuthKey))
 	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}

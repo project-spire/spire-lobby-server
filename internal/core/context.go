@@ -13,17 +13,16 @@ import (
 )
 
 type Context struct {
-	Settings *Settings
-	Db       *sql.DB
+	S *Settings
+	D *sql.DB
 }
 
 type Settings struct {
-	DbHost     string
-	DbPort     int
-	DbName     string
-	DbUser     string
-	DbPassword string
-
+	DbHost      string
+	DbPort      int
+	DbName      string
+	DbUser      string
+	DbPassword  string
 	MaxDbConnns int `yaml:"max_db_connections"`
 
 	ListenPort int
@@ -46,8 +45,8 @@ func NewContext() *Context {
 	db.SetMaxOpenConns(s.MaxDbConnns)
 
 	return &Context{
-		Settings: s,
-		Db:       db,
+		S: s,
+		D: db,
 	}
 }
 
@@ -82,10 +81,11 @@ func newSettings(settingsPath string) *Settings {
 	}
 	s.DbPassword = strings.TrimSpace(string(data))
 
-	s.ListenPort, err = strconv.Atoi(os.Getenv("SPIRE_LOBBY_PORT"))
+	port, err = strconv.Atoi(os.Getenv("SPIRE_LOBBY_PORT"))
 	if err != nil {
 		panic(err)
 	}
+	s.ListenPort = port
 
 	data, err = os.ReadFile(os.Getenv("SPIRE_AUTH_KEY_FILE"))
 	if err != nil {

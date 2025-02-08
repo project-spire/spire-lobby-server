@@ -8,7 +8,7 @@ import (
 	"spire/lobby/internal/core"
 )
 
-func HandleBotAccount(c *gin.Context, ctx *core.Context) {
+func HandleBotAccount(c *gin.Context, x *core.Context) {
 	type Request struct {
 		BotId uint64 `json:"bot_id" binding:"required"`
 	}
@@ -22,7 +22,7 @@ func HandleBotAccount(c *gin.Context, ctx *core.Context) {
 		return
 	}
 
-	row := ctx.Db.QueryRow("SELECT account_id FROM bots WHERE bot_id = ?", r.BotId)
+	row := x.D.QueryRow("SELECT account_id FROM bots WHERE bot_id = ?", r.BotId)
 	var accountId uint64
 	if err := row.Scan(&accountId); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -50,7 +50,7 @@ func HandleBotRegister(c *gin.Context, ctx *core.Context) {
 		return
 	}
 
-	tx, err := ctx.Db.Begin()
+	tx, err := ctx.D.Begin()
 	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
@@ -100,7 +100,7 @@ func HandleBotCharacterList(c *gin.Context, ctx *core.Context) {
 		return
 	}
 
-	rows, err := ctx.Db.Query("SELECT character_id FROM characters WHERE account_id = ?", r.AccountId)
+	rows, err := ctx.D.Query("SELECT character_id FROM characters WHERE account_id = ?", r.AccountId)
 	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
@@ -134,7 +134,7 @@ func HandleBotCharacterCreate(c *gin.Context, ctx *core.Context) {
 		return
 	}
 
-	tx, err := ctx.Db.Begin()
+	tx, err := ctx.D.Begin()
 	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}

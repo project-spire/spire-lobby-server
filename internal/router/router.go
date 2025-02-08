@@ -8,6 +8,8 @@ import (
 func NewRouter(ctx *core.Context) *gin.Engine {
 	r := gin.Default()
 
+	r.GET("/ping")
+
 	r.POST("/bot/auth", func(c *gin.Context) { HandleBotAuth(c, ctx) })
 	r.POST("/bot/account", func(c *gin.Context) { HandleBotAccount(c, ctx) })
 	r.POST("/bot/register", func(c *gin.Context) { HandleBotRegister(c, ctx) })
