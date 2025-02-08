@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 	"spire/lobby/internal/core"
 )
@@ -19,20 +18,19 @@ func HandleBotAccount(c *gin.Context, ctx *core.Context) {
 	}
 
 	var r Request
-	if err := c.Bind(&r); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
 	row := ctx.Db.QueryRow("SELECT account_id FROM bots WHERE bot_id = ?", r.BotId)
 	var accountId uint64
 	if err := row.Scan(&accountId); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusOK, Response{AccountId: 0})
+		if !errors.Is(err, sql.ErrNoRows) {
+			check(err, c, http.StatusInternalServerError)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
+
+		accountId = 0
 	}
 
 	c.JSON(http.StatusOK, Response{AccountId: accountId})
@@ -48,26 +46,15 @@ func HandleBotRegister(c *gin.Context, ctx *core.Context) {
 	}
 
 	var r Request
-	if err := c.Bind(&r); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
-	// Register bot
 	tx, err := ctx.Db.Begin()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		log.Fatalf("Error beginning transaction: %v", err)
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
-
-	cleanup := func() {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		err := tx.Rollback()
-		if err != nil {
-			log.Fatalf("Error rolling back transaction: %v", err)
-		}
-	}
+	defer tx.Rollback()
 
 	row := tx.QueryRow("SELECT 1 FROM bots WHERE bot_id = ?", r.BotId)
 	if err := row.Scan(); !errors.Is(err, sql.ErrNoRows) {
@@ -76,24 +63,21 @@ func HandleBotRegister(c *gin.Context, ctx *core.Context) {
 	}
 
 	res, err := tx.Exec("INSERT INTO accounts (account_id) VALUES (?)", r.BotId)
-	if err != nil {
-		cleanup()
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
+
 	accountId, err := res.LastInsertId()
-	if err != nil {
-		cleanup()
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
 
 	_, err = tx.Exec("INSERT INTO bots (bot_id, account_id) VALUES (?, ?)", r.BotId, accountId)
-	if err != nil {
-		cleanup()
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
 
-	if err := tx.Commit(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Transaction error"})
+	if !check(tx.Commit(), c, http.StatusInternalServerError) {
 		return
 	}
 
@@ -112,14 +96,12 @@ func HandleBotCharacterList(c *gin.Context, ctx *core.Context) {
 	}
 
 	var r Request
-	if err := c.Bind(&r); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
 	rows, err := ctx.Db.Query("SELECT character_id FROM characters WHERE account_id = ?", r.AccountId)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
 	defer rows.Close()
@@ -127,8 +109,7 @@ func HandleBotCharacterList(c *gin.Context, ctx *core.Context) {
 	var characters []uint64
 	for rows.Next() {
 		var characterId uint64
-		if err := rows.Scan(&characterId); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		if !check(rows.Scan(&characterId), c, http.StatusInternalServerError) {
 			return
 		}
 
@@ -149,10 +130,29 @@ func HandleBotCharacterCreate(c *gin.Context, ctx *core.Context) {
 	}
 
 	var r Request
-	if err := c.Bind(&r); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
-	//TODO
+	tx, err := ctx.Db.Begin()
+	if !check(err, c, http.StatusInternalServerError) {
+		return
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec("INSERT INTO characters (account_id, character_name) VALUES (?, ?)", r.AccountId, r.CharacterName)
+	if !check(err, c, http.StatusInternalServerError) {
+		return
+	}
+
+	characterId, err := res.LastInsertId()
+	if !check(err, c, http.StatusInternalServerError) {
+		return
+	}
+
+	if !check(tx.Commit(), c, http.StatusInternalServerError) {
+		return
+	}
+
+	c.JSON(http.StatusOK, Response{CharacterId: uint64(characterId)})
 }

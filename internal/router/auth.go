@@ -21,8 +21,7 @@ type AuthResponse struct {
 
 func HandleBotAuth(c *gin.Context, ctx *core.Context) {
 	var r AuthRequest
-	if err := c.Bind(&r); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+	if !check(c.Bind(&r), c, http.StatusBadRequest) {
 		return
 	}
 
@@ -30,10 +29,10 @@ func HandleBotAuth(c *gin.Context, ctx *core.Context) {
 	var one int
 	if err := row.Scan(&one); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid account ID"})
+			check(err, c, http.StatusUnauthorized)
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
+		check(err, c, http.StatusInternalServerError)
 		return
 	}
 
@@ -42,8 +41,7 @@ func HandleBotAuth(c *gin.Context, ctx *core.Context) {
 		"character_id": r.CharacterId,
 	})
 	s, err := t.SignedString([]byte(ctx.Settings.AuthKey))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token signing failed"})
+	if !check(err, c, http.StatusInternalServerError) {
 		return
 	}
 

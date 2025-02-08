@@ -12,7 +12,7 @@ func NewRouter(ctx *core.Context) *gin.Engine {
 	r.POST("/bot/account", func(c *gin.Context) { HandleBotAccount(c, ctx) })
 	r.POST("/bot/register", func(c *gin.Context) { HandleBotRegister(c, ctx) })
 	r.POST("/bot/character/list", func(c *gin.Context) { HandleBotCharacterList(c, ctx) })
-	r.POST("/bot/character/create")
+	r.POST("/bot/character/create", func(c *gin.Context) { HandleBotCharacterCreate(c, ctx) })
 
 	return r
 }
