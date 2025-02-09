@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"spire/lobby/internal/core"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -37,8 +38,8 @@ func HandleBotAuth(c *gin.Context, x *core.Context) {
 	}
 
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"account_id":   r.AccountId,
-		"character_id": r.CharacterId,
+		"account_id":   strconv.FormatUint(r.AccountId, 10),
+		"character_id": strconv.FormatUint(r.CharacterId, 10),
 	})
 	s, err := t.SignedString([]byte(x.S.AuthKey))
 	if !check(err, c, http.StatusInternalServerError) {
