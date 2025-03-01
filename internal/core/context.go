@@ -1,29 +1,28 @@
 package core
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 
-	_ "github.com/go-sql-driver/mysql"
-	"gopkg.in/yaml.v3"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 type Context struct {
 	S *Settings
-	D *sql.DB
+
+	client *mongo.Client
 }
 
 type Settings struct {
-	DbHost      string
-	DbPort      int
-	DbName      string
-	DbUser      string
-	DbPassword  string
-	MaxDbConnns int `yaml:"max_db_connections"`
+	MongoHost     string
+	MongoPort     int
+	MongoDatabase string
+	MongoUser     string
+	MongoPassword string
 
 	ListenPort int
 
@@ -33,53 +32,53 @@ type Settings struct {
 }
 
 func NewContext() *Context {
-	s := newSettings("settings.yaml")
+	s := newSettings()
 
-	db, err := sql.Open("mysql",
-		fmt.Sprintf("%s:%s@tcp(%s:%d)/%s",
-			s.DbUser, s.DbPassword, s.DbHost, s.DbPort, s.DbName))
+	client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
+		"mongodb://%s:%s@%s:%d/%s",
+		s.MongoUser, s.MongoPassword, s.MongoHost, s.MongoPort, s.MongoDatabase)))
 	if err != nil {
 		panic(err)
 	}
 
-	db.SetMaxOpenConns(s.MaxDbConnns)
-
 	return &Context{
-		S: s,
-		D: db,
+		S:      s,
+		client: client,
 	}
 }
 
-func newSettings(settingsPath string) *Settings {
+func (c *Context) Close() {
+	_ = c.client.Disconnect(context.Background())
+}
+
+func (c *Context) Collection(collection string) *mongo.Collection {
+	return c.client.Database(c.S.MongoDatabase).Collection(collection)
+}
+
+func (c *Context) StartSession() (*mongo.Session, error) {
+	return c.client.StartSession()
+}
+
+func newSettings() *Settings {
 	s := &Settings{}
 
-	data, err := os.ReadFile(settingsPath)
-	if err != nil {
-		log.Fatalf("Failed to read %s: %v", settingsPath, err)
-	}
+	s.MongoHost = os.Getenv("SPIRE_MONGO_HOST")
 
-	err = yaml.Unmarshal(data, &s)
-	if err != nil {
-		log.Fatalf("Failed to parse %s: %v", settingsPath, err)
-	}
-
-	s.DbHost = os.Getenv("SPIRE_DB_HOST")
-
-	port, err := strconv.Atoi(os.Getenv("SPIRE_DB_PORT"))
+	port, err := strconv.Atoi(os.Getenv("SPIRE_MONGO_PORT"))
 	if err != nil {
 		panic(err)
 	}
-	s.DbPort = port
+	s.MongoPort = port
 
-	s.DbName = os.Getenv("SPIRE_DB_NAME")
+	s.MongoDatabase = os.Getenv("SPIRE_MONGO_DATABASE")
 
-	s.DbUser = os.Getenv("SPIRE_DB_USER")
+	s.MongoUser = os.Getenv("SPIRE_MONGO_USER")
 
-	data, err = os.ReadFile(os.Getenv("SPIRE_DB_PASSWORD_FILE"))
+	data, err := os.ReadFile(os.Getenv("SPIRE_MONGO_PASSWORD_FILE"))
 	if err != nil {
 		panic(err)
 	}
-	s.DbPassword = strings.TrimSpace(string(data))
+	s.MongoPassword = strings.TrimSpace(string(data))
 
 	port, err = strconv.Atoi(os.Getenv("SPIRE_LOBBY_PORT"))
 	if err != nil {
@@ -104,7 +103,7 @@ func newSettings(settingsPath string) *Settings {
 }
 
 func (s *Settings) validate() bool {
-	if (s.DbHost == "") || (s.DbName == "") || (s.DbUser == "") || (s.DbPassword == "") {
+	if (s.MongoHost == "") || (s.MongoDatabase == "") || (s.MongoUser == "") || (s.MongoPassword == "") {
 		return false
 	}
 	if s.AuthKey == "" {

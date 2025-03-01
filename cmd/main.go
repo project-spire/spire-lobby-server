@@ -1,20 +1,18 @@
-//go:generate cp settings.yaml ./build/settings.yaml
-
 package main
 
 import (
 	"fmt"
+	"spire/lobby/internal/route"
 	"sync"
 
 	"spire/lobby/internal/core"
-	"spire/lobby/internal/router"
 )
 
 func main() {
 	ctx := core.NewContext()
-	r := router.NewRouter(ctx)
+	r := route.NewRouter(ctx)
 
-	defer ctx.D.Close()
+	defer ctx.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
