@@ -1,21 +1,22 @@
 package account
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"spire/lobby/internal/collection"
+	_ "github.com/jackc/pgx/v5"
 	"spire/lobby/internal/core"
 )
 
 func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 	type Request struct {
-		AccountID     bson.ObjectID `json:"account_id" binding:"required"`
-		CharacterName string        `json:"character_name" binding:"required"`
+		AccountID   int64 `json:"account_id" binding:"required"`
+		CharacterID int64 `json:"character_id" binding:"required"`
 	}
 
 	type Response struct {
@@ -27,9 +28,10 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	account, err := collection.FindAccount(x, r.AccountID)
+	var characterId int64
+	err := x.P.QueryRow(context.Background(), "SELECT id FROM characters WHERE id=$1 AND account_id=$2", r.CharacterID, r.AccountID).Scan(&characterId)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
+		if errors.Is(err, sql.ErrNoRows) {
 			core.Check(err, c, http.StatusUnauthorized)
 			return
 		}
@@ -37,21 +39,10 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	var characterFound = false
-	for _, character := range account.Characters {
-		if character.Name == r.CharacterName {
-			characterFound = true
-			break
-		}
-	}
-	if !characterFound {
-		core.Check(err, c, http.StatusUnauthorized)
-		return
-	}
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"account_id":     r.AccountID.String(),
-		"character_name": r.CharacterName,
+		"aid":  strconv.FormatInt(r.AccountID, 10),
+		"cid":  strconv.FormatInt(r.CharacterID, 10),
+		"role": "Player",
 	})
 	signedString, err := token.SignedString([]byte(x.S.AuthKey))
 	if !core.Check(err, c, http.StatusInternalServerError) {

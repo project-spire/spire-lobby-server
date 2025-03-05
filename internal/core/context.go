@@ -7,22 +7,20 @@ import (
 	"strconv"
 	"strings"
 
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Context struct {
 	S *Settings
-
-	client *mongo.Client
+	P *pgxpool.Pool
 }
 
 type Settings struct {
-	MongoHost     string
-	MongoPort     int
-	MongoDatabase string
-	MongoUser     string
-	MongoPassword string
+	DbHost     string
+	DbPort     int
+	DbName     string
+	DbUser     string
+	DbPassword string
 
 	ListenPort int
 
@@ -34,51 +32,43 @@ type Settings struct {
 func NewContext() *Context {
 	s := newSettings()
 
-	client, err := mongo.Connect(options.Client().ApplyURI(fmt.Sprintf(
-		"mongodb://%s:%s@%s:%d/%s",
-		s.MongoUser, s.MongoPassword, s.MongoHost, s.MongoPort, s.MongoDatabase)))
+	pool, err := pgxpool.New(context.Background(), fmt.Sprintf(
+		"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+		s.DbUser, s.DbPassword, s.DbHost, s.DbPort, s.DbName))
 	if err != nil {
 		panic(err)
 	}
 
 	return &Context{
-		S:      s,
-		client: client,
+		S: s,
+		P: pool,
 	}
 }
 
 func (c *Context) Close() {
-	_ = c.client.Disconnect(context.Background())
-}
-
-func (c *Context) Collection(collection string) *mongo.Collection {
-	return c.client.Database(c.S.MongoDatabase).Collection(collection)
-}
-
-func (c *Context) StartSession() (*mongo.Session, error) {
-	return c.client.StartSession()
+	c.P.Close()
 }
 
 func newSettings() *Settings {
 	s := &Settings{}
 
-	s.MongoHost = os.Getenv("SPIRE_MONGO_HOST")
+	s.DbHost = os.Getenv("SPIRE_MONGO_HOST")
 
 	port, err := strconv.Atoi(os.Getenv("SPIRE_MONGO_PORT"))
 	if err != nil {
 		panic(err)
 	}
-	s.MongoPort = port
+	s.DbPort = port
 
-	s.MongoDatabase = os.Getenv("SPIRE_MONGO_DATABASE")
+	s.DbName = os.Getenv("SPIRE_MONGO_DATABASE")
 
-	s.MongoUser = os.Getenv("SPIRE_MONGO_USER")
+	s.DbUser = os.Getenv("SPIRE_MONGO_USER")
 
 	data, err := os.ReadFile(os.Getenv("SPIRE_MONGO_PASSWORD_FILE"))
 	if err != nil {
 		panic(err)
 	}
-	s.MongoPassword = strings.TrimSpace(string(data))
+	s.DbPassword = strings.TrimSpace(string(data))
 
 	port, err = strconv.Atoi(os.Getenv("SPIRE_LOBBY_PORT"))
 	if err != nil {
@@ -103,7 +93,7 @@ func newSettings() *Settings {
 }
 
 func (s *Settings) validate() bool {
-	if (s.MongoHost == "") || (s.MongoDatabase == "") || (s.MongoUser == "") || (s.MongoPassword == "") {
+	if (s.DbHost == "") || (s.DbName == "") || (s.DbUser == "") || (s.DbPassword == "") {
 		return false
 	}
 	if s.AuthKey == "" {

@@ -1,24 +1,23 @@
 package account
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"spire/lobby/internal/collection"
 	"spire/lobby/internal/core"
 )
 
 func HandleBotAccountMe(c *gin.Context, x *core.Context) {
 	type Request struct {
-		BotID uint64 `json:"bot_id" binding:"required"`
+		BotID int64 `json:"bot_id" binding:"required"`
 	}
 
 	type Response struct {
-		Found     bool          `json:"found"`
-		AccountID bson.ObjectID `json:"account_id"`
+		Found     bool  `json:"found"`
+		AccountID int64 `json:"account_id"`
 	}
 
 	var r Request
@@ -27,17 +26,18 @@ func HandleBotAccountMe(c *gin.Context, x *core.Context) {
 	}
 
 	found := true
-	bot, err := collection.FindBot(x, r.BotID)
+	var accountID int64 = 0
+	err := x.P.QueryRow(context.Background(), "SELECT account_id FROM bots WHERE id=$1", r.BotID).Scan(&accountID)
 	if err != nil {
-		if !errors.Is(err, mongo.ErrNoDocuments) {
+		if errors.Is(err, sql.ErrNoRows) {
+			found = false
+		} else {
 			core.Check(err, c, http.StatusInternalServerError)
 			return
 		}
-
-		found = false
 	}
 
 	c.JSON(http.StatusOK, Response{
 		Found:     found,
-		AccountID: bot.AccountID})
+		AccountID: accountID})
 }

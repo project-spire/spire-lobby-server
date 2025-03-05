@@ -1,18 +1,17 @@
 package character
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"spire/lobby/internal/collection"
 	"spire/lobby/internal/core"
 )
 
 func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
-		AccountID     bson.ObjectID `json:"account_id" binding:"required"`
-		CharacterName string        `json:"character_name" binding:"required"`
+		AccountID     int64  `json:"account_id" binding:"required"`
+		CharacterName string `json:"character_name" binding:"required"`
 	}
 
 	type Response struct{}
@@ -22,16 +21,7 @@ func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	account, err := collection.FindAccount(x, r.AccountID)
-	if err != nil {
-		core.Check(err, c, http.StatusUnauthorized)
-		return
-	}
-
-	//TODO: Check duplicated character name
-	err = collection.InsertCharacter(x, &account, &collection.Character{
-		Name: r.CharacterName,
-	})
+	err := x.P.QueryRow(context.Background(), "INSERT INTO characters (name) VALUES ($1)", r.CharacterName).Scan()
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
