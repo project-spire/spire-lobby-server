@@ -10,7 +10,7 @@ import (
 
 func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
-		AccountID     int64  `json:"account_id" binding:"required"`
+		AccountID     uint64 `json:"account_id" binding:"required"`
 		CharacterName string `json:"character_name" binding:"required"`
 	}
 

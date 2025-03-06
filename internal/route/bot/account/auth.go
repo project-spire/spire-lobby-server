@@ -15,8 +15,8 @@ import (
 
 func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 	type Request struct {
-		AccountID   int64 `json:"account_id" binding:"required"`
-		CharacterID int64 `json:"character_id" binding:"required"`
+		AccountID   uint64 `json:"account_id" binding:"required"`
+		CharacterID uint64 `json:"character_id" binding:"required"`
 	}
 
 	type Response struct {
@@ -28,7 +28,7 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	var characterId int64
+	var characterId uint64
 	err := x.P.QueryRow(context.Background(), "SELECT id FROM characters WHERE id=$1 AND account_id=$2", r.CharacterID, r.AccountID).Scan(&characterId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

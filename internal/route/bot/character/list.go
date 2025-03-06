@@ -1,0 +1,45 @@
+package character
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"spire/lobby/internal/core"
+)
+
+func HandleBotCharacterList(c *gin.Context, x *core.Context) {
+	type Request struct {
+		AccountID uint64 `json:"account_id" binding:"required"`
+	}
+
+	type Response struct {
+		Characters []uint64 `json:"characters"`
+	}
+
+	var r Request
+	if !core.Check(c.Bind(&r), c, http.StatusBadRequest) {
+		return
+	}
+
+	rows, err := x.P.Query(context.Background(), "SELECT id FROM characters WHERE account_id=$1", r.AccountID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		core.Check(err, c, http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var characters []uint64
+	for rows.Next() {
+		var characterID uint64
+		if err := rows.Scan(&characterID); err != nil {
+			core.Check(err, c, http.StatusInternalServerError)
+			return
+		}
+		characters = append(characters, characterID)
+	}
+
+	c.JSON(http.StatusOK, Response{Characters: characters})
+}
