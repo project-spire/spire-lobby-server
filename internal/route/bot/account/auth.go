@@ -40,8 +40,8 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"aid":  strconv.FormatInt(r.AccountID, 10),
-		"cid":  strconv.FormatInt(r.CharacterID, 10),
+		"aid":  strconv.FormatUint(r.AccountID, 10),
+		"cid":  strconv.FormatUint(r.CharacterID, 10),
 		"role": "Player",
 	})
 	signedString, err := token.SignedString([]byte(x.S.AuthKey))
