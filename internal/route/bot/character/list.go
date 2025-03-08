@@ -2,8 +2,6 @@ package character
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -25,13 +23,14 @@ func HandleBotCharacterList(c *gin.Context, x *core.Context) {
 	}
 
 	rows, err := x.P.Query(context.Background(), "SELECT id FROM characters WHERE account_id=$1", r.AccountID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	var characters []uint64
+	characters := make([]uint64, 0)
+
 	for rows.Next() {
 		var characterID uint64
 		if err := rows.Scan(&characterID); err != nil {

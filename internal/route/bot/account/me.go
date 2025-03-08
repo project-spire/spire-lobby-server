@@ -29,12 +29,12 @@ func HandleBotAccountMe(c *gin.Context, x *core.Context) {
 	var accountID uint64 = 0
 	err := x.P.QueryRow(context.Background(), "SELECT account_id FROM bots WHERE id=$1", r.BotID).Scan(&accountID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			found = false
-		} else {
+		if !errors.Is(err, sql.ErrNoRows) {
 			core.Check(err, c, http.StatusInternalServerError)
 			return
 		}
+
+		found = false
 	}
 
 	c.JSON(http.StatusOK, Response{

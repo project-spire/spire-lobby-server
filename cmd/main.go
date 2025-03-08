@@ -2,22 +2,30 @@ package main
 
 import (
 	"fmt"
-	"spire/lobby/internal/route"
+	"io"
+	"log"
+	"os"
 	"sync"
 
+	"github.com/gin-gonic/gin"
 	"spire/lobby/internal/core"
+	"spire/lobby/internal/route"
 )
 
 func main() {
 	ctx := core.NewContext()
-	r := route.NewRouter(ctx)
 
-	defer ctx.Close()
+	f, _ := os.Create("gin.log")
+	gin.DefaultWriter = io.MultiWriter(f, os.Stdout)
+	log.SetOutput(gin.DefaultWriter)
+
+	r := route.NewRouter(ctx)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
 	go func() {
+		defer ctx.Close()
 		defer wg.Done()
 
 		listenAddr := fmt.Sprintf(":%d", ctx.S.ListenPort)

@@ -31,13 +31,13 @@ func HandleBotAccountCreate(c *gin.Context, x *core.Context) {
 	defer tx.Rollback(ctx)
 
 	var accountID uint64
-	err = tx.QueryRow(ctx, "INSERT INTO accounts () VALUES () RETURNING id").Scan(&accountID)
+	err = tx.QueryRow(ctx, "INSERT INTO accounts DEFAULT VALUES RETURNING id").Scan(&accountID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
 	}
 
-	_, err = tx.Exec(ctx, "INSERT INTO bots (account_id) VALUES ($1) RETURNING id", accountID)
+	_, err = tx.Exec(ctx, "INSERT INTO bots (id, account_id) VALUES ($1, $2)", r.BotID, accountID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
