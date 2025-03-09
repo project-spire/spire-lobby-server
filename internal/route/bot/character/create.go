@@ -32,5 +32,5 @@ func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, Response{})
+	c.JSON(http.StatusOK, Response{CharacterID: characterID})
 }
