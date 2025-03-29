@@ -12,6 +12,7 @@ func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
 		AccountID     uint64 `json:"account_id" binding:"required"`
 		CharacterName string `json:"character_name" binding:"required"`
+		Race          string `json:"race" binding:"required"`
 	}
 
 	type Response struct {
@@ -25,8 +26,8 @@ func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
 
 	var characterID uint64
 	err := x.P.QueryRow(context.Background(),
-		"INSERT INTO characters (account_id, name) VALUES ($1, $2) RETURNING id",
-		r.AccountID, r.CharacterName).Scan(&characterID)
+		"INSERT INTO characters (account_id, name, race) VALUES ($1, $2, $3) RETURNING id",
+		r.AccountID, r.CharacterName, r.Race).Scan(&characterID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
