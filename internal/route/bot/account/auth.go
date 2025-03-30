@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -43,6 +44,8 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 		"aid": strconv.FormatUint(r.AccountID, 10),
 		"cid": strconv.FormatUint(r.CharacterID, 10),
 		"prv": "None",
+
+		"exp": jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 	})
 	signedString, err := token.SignedString([]byte(x.S.AuthKey))
 	if !core.Check(err, c, http.StatusInternalServerError) {
