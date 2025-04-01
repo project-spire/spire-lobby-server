@@ -1,4 +1,4 @@
-package account
+package dev
 
 import (
 	"context"
@@ -8,9 +8,9 @@ import (
 	"spire/lobby/internal/core"
 )
 
-func HandleBotAccountCreate(c *gin.Context, x *core.Context) {
+func HandleAccountDevCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
-		BotID uint64 `json:"bot_id" binding:"required"`
+		DevID string `json:"dev_id" binding:"required,max=16"`
 	}
 
 	type Response struct {
@@ -31,13 +31,18 @@ func HandleBotAccountCreate(c *gin.Context, x *core.Context) {
 	defer tx.Rollback(ctx)
 
 	var accountID uint64
-	err = tx.QueryRow(ctx, "INSERT INTO accounts DEFAULT VALUES RETURNING id").Scan(&accountID)
+	err = tx.QueryRow(ctx,
+		`INSERT INTO accounts (platform, platform_id)
+		VALUES ('Dev', 0) RETURNING id`).Scan(&accountID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
 	}
 
-	_, err = tx.Exec(ctx, "INSERT INTO bots (id, account_id) VALUES ($1, $2)", r.BotID, accountID)
+	_, err = tx.Exec(ctx,
+		`INSERT INTO dev_accounts (id, account_id) VALUES ($1, $2)`,
+		r.DevID,
+		accountID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return

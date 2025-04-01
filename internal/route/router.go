@@ -3,8 +3,9 @@ package route
 import (
 	"github.com/gin-gonic/gin"
 	"spire/lobby/internal/core"
-	"spire/lobby/internal/route/bot/account"
-	"spire/lobby/internal/route/bot/character"
+	"spire/lobby/internal/route/account"
+	"spire/lobby/internal/route/account/dev"
+	"spire/lobby/internal/route/character"
 )
 
 func NewRouter(ctx *core.Context) *gin.Engine {
@@ -12,11 +13,11 @@ func NewRouter(ctx *core.Context) *gin.Engine {
 
 	r.GET("/ping")
 
-	r.POST("/bot/account/auth", func(c *gin.Context) { account.HandleBotAccountAuth(c, ctx) })
-	r.POST("/bot/account/create", func(c *gin.Context) { account.HandleBotAccountCreate(c, ctx) })
-	r.POST("/bot/account/me", func(c *gin.Context) { account.HandleBotAccountMe(c, ctx) })
-	r.POST("/bot/character/create", func(c *gin.Context) { character.HandleBotCharacterCreate(c, ctx) })
-	r.POST("/bot/character/list", func(c *gin.Context) { character.HandleBotCharacterList(c, ctx) })
+	r.POST("/account/auth", func(c *gin.Context) { account.HandleAccountAuth(c, ctx) })
+	r.POST("/account/dev/create", func(c *gin.Context) { dev.HandleAccountDevCreate(c, ctx) })
+	r.POST("/account/dev/me", func(c *gin.Context) { dev.HandleAccountDevMe(c, ctx) })
+	r.POST("/character/create", func(c *gin.Context) { character.HandleCharacterCreate(c, ctx) })
+	r.POST("/character/list", func(c *gin.Context) { character.HandleCharacterList(c, ctx) })
 
 	return r
 }

@@ -1,4 +1,4 @@
-package account
+package dev
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 	"spire/lobby/internal/core"
 )
 
-func HandleBotAccountMe(c *gin.Context, x *core.Context) {
+func HandleAccountDevMe(c *gin.Context, x *core.Context) {
 	type Request struct {
-		BotID uint64 `json:"bot_id" binding:"required"`
+		DevID string `json:"dev_id" binding:"required"`
 	}
 
 	type Response struct {
@@ -27,7 +27,7 @@ func HandleBotAccountMe(c *gin.Context, x *core.Context) {
 
 	found := true
 	var accountID uint64 = 0
-	err := x.P.QueryRow(context.Background(), "SELECT account_id FROM bots WHERE id=$1", r.BotID).Scan(&accountID)
+	err := x.P.QueryRow(context.Background(), "SELECT account_id FROM dev_accounts WHERE id=$1", r.DevID).Scan(&accountID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			core.Check(err, c, http.StatusInternalServerError)
@@ -39,5 +39,6 @@ func HandleBotAccountMe(c *gin.Context, x *core.Context) {
 
 	c.JSON(http.StatusOK, Response{
 		Found:     found,
-		AccountID: accountID})
+		AccountID: accountID,
+	})
 }

@@ -14,7 +14,7 @@ import (
 	"spire/lobby/internal/core"
 )
 
-func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
+func HandleAccountAuth(c *gin.Context, x *core.Context) {
 	type Request struct {
 		AccountID   uint64 `json:"account_id" binding:"required"`
 		CharacterID uint64 `json:"character_id" binding:"required"`
@@ -29,8 +29,14 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	var characterId uint64
-	err := x.P.QueryRow(context.Background(), "SELECT id FROM characters WHERE id=$1 AND account_id=$2", r.CharacterID, r.AccountID).Scan(&characterId)
+	var privilege string
+	err := x.P.QueryRow(context.Background(),
+		`SELECT a.privilege
+		FROM accounts a
+		JOIN characters c ON a.id = c.account_id
+		WHERE a.id = $1 AND c.id = $2`,
+		r.AccountID,
+		r.CharacterID).Scan(&privilege)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			core.Check(err, c, http.StatusUnauthorized)
@@ -43,7 +49,7 @@ func HandleBotAccountAuth(c *gin.Context, x *core.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"aid": strconv.FormatUint(r.AccountID, 10),
 		"cid": strconv.FormatUint(r.CharacterID, 10),
-		"prv": "None",
+		"prv": privilege,
 
 		"exp": jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 	})

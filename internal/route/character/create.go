@@ -8,7 +8,7 @@ import (
 	"spire/lobby/internal/core"
 )
 
-func HandleBotCharacterCreate(c *gin.Context, x *core.Context) {
+func HandleCharacterCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
 		AccountID     uint64 `json:"account_id" binding:"required"`
 		CharacterName string `json:"character_name" binding:"required"`
