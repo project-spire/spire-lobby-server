@@ -10,7 +10,7 @@ import (
 
 func HandleAccountDevCreate(c *gin.Context, x *core.Context) {
 	type Request struct {
-		DevID string `json:"dev_id" binding:"required,max=16"`
+		DevID string `json:"dev_id" binding:"required,min=4,max=16"`
 	}
 
 	type Response struct {

@@ -14,7 +14,7 @@ func HandleCharacterList(c *gin.Context, x *core.Context) {
 	}
 
 	type Response struct {
-		Characters []uint64 `json:"characters"`
+		Characters []Character `json:"characters"`
 	}
 
 	var r Request
@@ -22,22 +22,29 @@ func HandleCharacterList(c *gin.Context, x *core.Context) {
 		return
 	}
 
-	rows, err := x.P.Query(context.Background(), "SELECT id FROM characters WHERE account_id=$1", r.AccountID)
+	rows, err := x.P.Query(context.Background(),
+		"SELECT id, name, race FROM characters WHERE account_id=$1", r.AccountID)
 	if err != nil {
 		core.Check(err, c, http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
 
-	characters := make([]uint64, 0)
+	characters := make([]Character, 0)
 
 	for rows.Next() {
 		var characterID uint64
-		if err := rows.Scan(&characterID); err != nil {
+		var characterName string
+		var characterRace string
+		if err := rows.Scan(&characterID, characterName, characterRace); err != nil {
 			core.Check(err, c, http.StatusInternalServerError)
 			return
 		}
-		characters = append(characters, characterID)
+		characters = append(characters, Character{
+			ID:   characterID,
+			Name: characterName,
+			Race: characterRace,
+		})
 	}
 
 	c.JSON(http.StatusOK, Response{Characters: characters})
